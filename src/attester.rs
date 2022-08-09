@@ -2,6 +2,7 @@ use std::fmt;
 use std::io;
 
 use kbs_types::{Attestation, Challenge};
+use mockall::automock;
 use rocket::serde::json::Value;
 
 #[derive(Debug)]
@@ -27,6 +28,7 @@ impl fmt::Display for AttesterError {
     }
 }
 
+#[automock]
 pub trait Attester {
     fn challenge(&mut self) -> Result<Challenge, AttesterError>;
     fn attest(&mut self, attestation: &Attestation, measurement: &str)

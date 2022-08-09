@@ -15,6 +15,7 @@ rocket_sync_db_pools = { version = "0.1.0-rc.2", features = [ "diesel_sqlite_poo
 serde_json = "1.0"
 sev = { version = "0.3.0", features = [ "openssl" ] }
 uuid = { version = "0.8.2", features = ["serde", "v4"] }
+mockall = "0.11.2"
 
 kbs-types = { git = "https://github.com/virtee/kbs-types", features = [ "tee-sev" ] }
 
