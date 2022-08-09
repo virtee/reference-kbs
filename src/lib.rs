@@ -2,19 +2,19 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 
+#[macro_use]
+extern crate rocket;
 pub mod attester;
 use attester::Attester;
+pub mod secrets_store;
 pub mod sev;
 use crate::sev::SevAttester;
 
 use rocket::http::{Cookie, CookieJar};
 use rocket::response::status::{BadRequest, Unauthorized};
 use rocket::serde::json::{json, Json, Value};
-use rocket::State;
-
-#[macro_use]
-extern crate rocket;
 use rocket::serde::{Deserialize, Serialize};
+use rocket::State;
 
 use kbs_types::{Attestation, Request, SevRequest, Tee};
 use uuid::Uuid;
@@ -40,6 +40,7 @@ table! {
         tee_config -> Text,
     }
 }
+use secrets_store::{get_secret_from_vault, SecretStore};
 
 #[derive(Eq, PartialEq)]
 pub enum SessionStatus {
@@ -98,6 +99,29 @@ impl Session {
 
 pub struct SessionState {
     pub sessions: RwLock<HashMap<String, Arc<Mutex<Session>>>>,
+    pub secret_store: RwLock<SecretStore>,
+}
+
+#[get("/get")]
+pub fn get_secret_store(state: &State<SessionState>) -> Json<SecretStore> {
+    let store = state.secret_store.read().unwrap();
+    Json(SecretStore::new(&store.get_url(), &store.get_token()))
+}
+
+#[post("/update", format = "json", data = "<store>")]
+pub fn register_secret_store(state: &State<SessionState>, store: Json<SecretStore>) -> Value {
+    let valid = store.validate();
+    match valid {
+        Ok(_) => {
+            let mut s = state.secret_store.write().unwrap();
+            s.update(store.get_url(), store.get_token());
+
+            return json!({ "status": "updated"});
+        }
+        Err(e) => json!({ "status": "error",
+                "reason": e.to_string(),
+        }),
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Queryable, Insertable)]
@@ -232,7 +256,6 @@ pub async fn attest(
 
 #[get("/key/<key_id>")]
 pub async fn key(
-    db: Db,
     state: &State<SessionState>,
     cookies: &CookieJar<'_>,
     key_id: &str,
@@ -254,19 +277,13 @@ pub async fn key(
     }
 
     let owned_key_id = key_id.to_string();
-    let secrets_entry: Secret = db
-        .run(move |conn| {
-            secrets::table
-                .filter(secrets::key_id.eq(owned_key_id))
-                .first(conn)
-        })
-        .await
-        .map_err(|e| Unauthorized(Some(e.to_string())))?;
-
+    let url = state.secret_store.read().unwrap().get_url();
+    let token = state.secret_store.read().unwrap().get_token();
+    let secret_clear = get_secret_from_vault(&url, &token, &owned_key_id).await;
     let mut session = session_lock.lock().unwrap();
     let secret = session
         .attester()
-        .encrypt_secret(secrets_entry.secret.as_bytes())
+        .encrypt_secret(&secret_clear.as_bytes())
         .unwrap();
     Ok(secret)
 }
