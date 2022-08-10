@@ -1,2 +1,3 @@
 fn main() {
-    println!("cargo:rustc-link-lib=krunfw");}
+    println!("cargo:rustc-link-lib=krunfw");
+}

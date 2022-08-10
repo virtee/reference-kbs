@@ -10,6 +10,7 @@ pub enum AttesterError {
     InvalidMeasurement(io::Error),
     InvalidRequest(serde_json::Error),
     SevChallengeJson(serde_json::Error),
+    SevInvalidPolicy(serde_json::Error),
     SevMissingChain,
     SevMissingSession,
     SevMissingVerified,

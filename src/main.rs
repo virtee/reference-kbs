@@ -1,3 +1,5 @@
+#![allow(clippy::extra_unused_lifetimes)]
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 
@@ -22,6 +24,21 @@ use rocket_sync_db_pools::database;
 extern crate diesel;
 
 use diesel::prelude::*;
+
+#[derive(Debug, Clone, Deserialize, Serialize, Queryable, Insertable)]
+#[serde(crate = "rocket::serde")]
+#[table_name = "configs"]
+struct TeeConfig {
+    workload_id: String,
+    tee_config: String,
+}
+
+table! {
+    configs (workload_id) {
+        workload_id -> Text,
+        tee_config -> Text,
+    }
+}
 
 #[derive(Debug, Clone, Deserialize, Serialize, Queryable, Insertable)]
 #[serde(crate = "rocket::serde")]
@@ -63,12 +80,26 @@ fn index() -> Result<String, Unauthorized<String>> {
 }
 
 #[post("/auth", format = "application/json", data = "<request>")]
-fn auth(
+async fn auth(
+    db: Db,
     state: &State<SessionState>,
     cookies: &CookieJar<'_>,
     request: Json<Request>,
 ) -> Result<Value, BadRequest<String>> {
     let session_id = Uuid::new_v4().to_simple().to_string();
+
+    let workload_id = request.workload_id.clone();
+    let tee_config: Option<String> = match db
+        .run(move |conn| {
+            configs::table
+                .filter(configs::workload_id.eq(workload_id))
+                .first::<TeeConfig>(conn)
+        })
+        .await
+    {
+        Ok(e) => Some(e.tee_config),
+        Err(_) => None,
+    };
 
     let mut attester: Box<dyn Attester> = match request.tee {
         Tee::Sev => {
@@ -79,6 +110,7 @@ fn auth(
                 request.workload_id.clone(),
                 sev_request.build,
                 sev_request.chain,
+                tee_config,
             )) as Box<dyn Attester>
         }
         _ => return Err(BadRequest(Some("Unsupported TEE".to_string()))),

@@ -15,10 +15,17 @@ pub struct SevAttester {
     chain: Option<Chain>,
     session: Option<session::Session<Initialized>>,
     session_verified: Option<session::Session<Verified>>,
+    tee_config: Option<String>,
 }
 
 impl SevAttester {
-    pub fn new(workload_id: String, nonce: String, build: Build, chain: Chain) -> Self {
+    pub fn new(
+        workload_id: String,
+        nonce: String,
+        build: Build,
+        chain: Chain,
+        tee_config: Option<String>,
+    ) -> Self {
         SevAttester {
             _workload_id: workload_id,
             nonce,
@@ -26,14 +33,18 @@ impl SevAttester {
             chain: Some(chain),
             session: None,
             session_verified: None,
+            tee_config,
         }
     }
 }
 
 impl Attester for SevAttester {
     fn challenge(&mut self) -> Result<Challenge, AttesterError> {
-        // TODO: The policy should be read from a DB using the workload_id as key
-        let policy = Policy::default();
+        let policy = if let Some(tee_config) = &self.tee_config {
+            serde_json::from_str(tee_config).map_err(AttesterError::SevInvalidPolicy)?
+        } else {
+            Policy::default()
+        };
         let session = session::Session::try_from(policy).map_err(AttesterError::SevPolicy)?;
         let chain = self.chain.take().ok_or(AttesterError::SevMissingChain)?;
         let start = session.start(chain).map_err(AttesterError::SevSession)?;
