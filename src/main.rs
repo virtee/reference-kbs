@@ -5,11 +5,12 @@ use std::sync::{Arc, Mutex, RwLock};
 
 #[macro_use]
 extern crate rocket;
+use rocket::fairing::AdHoc;
 use rocket::http::{Cookie, CookieJar};
 use rocket::response::status::{BadRequest, Unauthorized};
 use rocket::serde::json::{json, Json, Value};
 use rocket::serde::{Deserialize, Serialize};
-use rocket::State;
+use rocket::{Build, Rocket, State};
 
 use kbs_types::{Attestation, Request, SevRequest, Tee};
 use uuid::Uuid;
@@ -22,8 +23,11 @@ use rocket_sync_db_pools::database;
 
 #[macro_use]
 extern crate diesel;
+#[macro_use]
+extern crate diesel_migrations;
 
 use diesel::prelude::*;
+use diesel_migrations::embed_migrations;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Queryable, Insertable)]
 #[serde(crate = "rocket::serde")]
@@ -72,6 +76,15 @@ table! {
 
 #[database("diesel")]
 struct Db(diesel::SqliteConnection);
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(crate = "rocket::serde")]
+struct Workload {
+    workload_id: String,
+    launch_measurement: String,
+    tee_config: String,
+    passphrase: String,
+}
 
 #[get("/")]
 fn index() -> Result<String, Unauthorized<String>> {
@@ -129,6 +142,47 @@ async fn auth(
         .unwrap()
         .insert(session.id(), Arc::new(Mutex::new(session)));
     Ok(json!(challenge))
+}
+
+#[post("/register_workload", format = "application/json", data = "<workload>")]
+async fn register_workload(db: Db, workload: Json<Workload>) -> Result<(), BadRequest<String>> {
+    let measurement = Measurement {
+        workload_id: workload.workload_id.clone(),
+        launch_measurement: workload.launch_measurement.clone(),
+    };
+    db.run(move |conn| {
+        diesel::insert_into(measurements::table)
+            .values(&measurement)
+            .execute(conn)
+    })
+    .await
+    .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    let tee_config = TeeConfig {
+        workload_id: workload.workload_id.clone(),
+        tee_config: workload.tee_config.clone(),
+    };
+    db.run(move |conn| {
+        diesel::insert_into(configs::table)
+            .values(&tee_config)
+            .execute(conn)
+    })
+    .await
+    .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    let secret = Secret {
+        key_id: workload.workload_id.clone(),
+        secret: workload.passphrase.clone(),
+    };
+    db.run(move |conn| {
+        diesel::insert_into(secrets::table)
+            .values(&secret)
+            .execute(conn)
+    })
+    .await
+    .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+    Ok(())
 }
 
 #[post("/attest", format = "application/json", data = "<attestation>")]
@@ -212,12 +266,30 @@ async fn key(
     Ok(secret)
 }
 
+async fn run_migrations(rocket: Rocket<Build>) -> Rocket<Build> {
+    // This macro from `diesel_migrations` defines an `embedded_migrations`
+    // module containing a function named `run` that runs the migrations in the
+    // specified directory, initializing the database.
+    embed_migrations!("db/diesel/migrations");
+
+    let conn = Db::get_one(&rocket).await.expect("database connection");
+    conn.run(|c| embedded_migrations::run(c))
+        .await
+        .expect("diesel migrations");
+
+    rocket
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/kbs/v0", routes![index, auth, attest, key])
+        .mount(
+            "/kbs/v0",
+            routes![index, auth, attest, key, register_workload],
+        )
         .manage(SessionState {
             sessions: RwLock::new(HashMap::new()),
         })
         .attach(Db::fairing())
+        .attach(AdHoc::on_ignite("Diesel Migrations", run_migrations))
 }
