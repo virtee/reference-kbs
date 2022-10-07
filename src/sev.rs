@@ -9,7 +9,7 @@ use sev::Build;
 use crate::attester::{Attester, AttesterError};
 
 pub struct SevAttester {
-    _workload_id: String,
+    workload_id: String,
     nonce: String,
     build: Build,
     chain: Option<Chain>,
@@ -27,7 +27,7 @@ impl SevAttester {
         tee_config: Option<String>,
     ) -> Self {
         SevAttester {
-            _workload_id: workload_id,
+            workload_id,
             nonce,
             build,
             chain: Some(chain),
@@ -39,6 +39,10 @@ impl SevAttester {
 }
 
 impl Attester for SevAttester {
+    fn workload_id(&self) -> &String {
+        &self.workload_id
+    }
+
     fn challenge(&mut self) -> Result<Challenge, AttesterError> {
         let policy = if let Some(tee_config) = &self.tee_config {
             serde_json::from_str(tee_config).map_err(AttesterError::SevInvalidPolicy)?

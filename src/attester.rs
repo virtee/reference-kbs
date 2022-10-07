@@ -28,6 +28,7 @@ impl fmt::Display for AttesterError {
 }
 
 pub trait Attester {
+    fn workload_id(&self) -> &String;
     fn challenge(&mut self) -> Result<Challenge, AttesterError>;
     fn attest(&mut self, attestation: &Attestation, measurement: &str)
         -> Result<(), AttesterError>;
