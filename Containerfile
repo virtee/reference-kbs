@@ -1,8 +1,8 @@
-FROM docker.io/rust:1.63.0
+FROM fedora
  
-WORKDIR /usr/src/reference-kbs
-COPY . .
+WORKDIR /app
+COPY db/ ./db
+COPY Rocket.toml .
+COPY target/release/reference-kbs .
  
-RUN cargo install --path .
- 
-CMD ["reference-kbs"]
+CMD ["/app/reference-kbs"]
