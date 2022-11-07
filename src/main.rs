@@ -152,7 +152,7 @@ async fn register_workload(db: Db, workload: Json<Workload>) -> Result<(), BadRe
         launch_measurement: workload.launch_measurement.clone(),
     };
     db.run(move |conn| {
-        diesel::insert_into(measurements::table)
+        diesel::replace_into(measurements::table)
             .values(&measurement)
             .execute(conn)
     })
@@ -164,7 +164,7 @@ async fn register_workload(db: Db, workload: Json<Workload>) -> Result<(), BadRe
         tee_config: workload.tee_config.clone(),
     };
     db.run(move |conn| {
-        diesel::insert_into(configs::table)
+        diesel::replace_into(configs::table)
             .values(&tee_config)
             .execute(conn)
     })
@@ -176,7 +176,7 @@ async fn register_workload(db: Db, workload: Json<Workload>) -> Result<(), BadRe
         secret: workload.passphrase.clone(),
     };
     db.run(move |conn| {
-        diesel::insert_into(secrets::table)
+        diesel::replace_into(secrets::table)
             .values(&secret)
             .execute(conn)
     })
