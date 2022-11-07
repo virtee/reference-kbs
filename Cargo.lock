@@ -1060,7 +1060,7 @@ dependencies = [
 
 [[package]]
 name = "reference-kbs"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "diesel",
  "diesel_migrations",

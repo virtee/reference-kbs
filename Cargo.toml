@@ -1,6 +1,6 @@
 [package]
 name = "reference-kbs"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2021"
 authors = ["Sergio Lopez <slp@redhat.com>"]
 homepage = "https://github.com/virtee/reference-kbs"
