@@ -649,8 +649,9 @@ checksum = "6c8af84674fe1f223a982c933a0ee1086ac4d4052aa0fb8060c12c6ad838e754"
 
 [[package]]
 name = "kbs-types"
-version = "0.0.0"
-source = "git+https://github.com/virtee/kbs-types#028b26c1fba22fadf51d69be0e0be6a4a046a129"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "465614015eaeeecc06aad413fce3311992396f3ea47f7ec656779b784ecce64e"
 dependencies = [
  "serde",
  "serde_json",
@@ -1059,7 +1060,7 @@ dependencies = [
 
 [[package]]
 name = "reference-kbs"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "diesel",
  "diesel_migrations",
