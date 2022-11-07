@@ -10,14 +10,13 @@ license = "Apache-2.0"
 diesel = { version = "1.3", features = ["sqlite", "r2d2"] }
 diesel_migrations = "1.3"
 hex = "0.4"
+kbs-types = { version = "0.1.0", features = [ "tee-sev" ] }
 libc = "0.2"
 rocket = { version = "0.5.0-rc.2", features = [ "json" ] }
 rocket_sync_db_pools = { version = "0.1.0-rc.2", features = [ "diesel_sqlite_pool" ] }
 serde_json = "1.0"
 sev = { version = "0.3.0", features = [ "openssl" ] }
 uuid = { version = "0.8.2", features = ["serde", "v4"] }
-
-kbs-types = { git = "https://github.com/virtee/kbs-types", features = [ "tee-sev" ] }
 
 [patch.crates-io]
 sev = { git = "https://github.com/slp/sev", branch = "external-digest", features = [ "openssl"] }
