@@ -12,11 +12,12 @@ use rocket::serde::json::{json, Json, Value};
 use rocket::serde::{Deserialize, Serialize};
 use rocket::{Build, Rocket, State};
 
-use kbs_types::{Attestation, Request, SevRequest, Tee};
+use kbs_types::{Attestation, Request, SevRequest, SnpRequest, Tee};
 use uuid::Uuid;
 
 use reference_kbs::attester::Attester;
 use reference_kbs::sev::SevAttester;
+use reference_kbs::snp::SnpAttester;
 use reference_kbs::{Session, SessionState};
 
 use rocket_sync_db_pools::database;
@@ -124,6 +125,42 @@ async fn auth(
                 session_id.clone(),
                 sev_request.build,
                 sev_request.chain,
+                tee_config,
+            )) as Box<dyn Attester>
+        }
+        Tee::Snp => {
+            let snp_request: SnpRequest = serde_json::from_str(&request.extra_params)
+                .map_err(|e| BadRequest(Some(e.to_string())))?;
+
+            let workload_id = snp_request.workload_id.clone();
+            let tee_config: Option<String> = match db
+                .run(move |conn| {
+                    configs::table
+                        .filter(configs::workload_id.eq(workload_id))
+                        .first::<TeeConfig>(conn)
+                })
+                .await
+            {
+                Ok(e) => Some(e.tee_config),
+                Err(_) => None,
+            };
+
+            /*
+             * There needs to be a TEE config for each TEE workload.
+             */
+            if tee_config.is_none() {
+                return Err(BadRequest(Some("No TEE config found".to_string())));
+            }
+
+            /*
+             * We've already checked for the None case, it is now safe to
+             * unwrap() the TEE config.
+             */
+            let tee_config = tee_config.unwrap();
+
+            Box::new(SnpAttester::new(
+                snp_request.workload_id.clone(),
+                session_id.clone(),
                 tee_config,
             )) as Box<dyn Attester>
         }
