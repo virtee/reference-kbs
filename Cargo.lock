@@ -117,10 +117,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "383d29d513d8764dcdc42ea295d979eb99c3c9f00607b3692cf68a431f7dca72"
 
 [[package]]
-name = "bitfield"
-version = "0.14.0"
+name = "bincode"
+version = "1.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d7e60934ceec538daadb9d8432424ed043a904d8e0243f3c6446bce549a46ac"
+checksum = "b1f45e9417d87227c7a56d22e471c6206462cba514c7590c09aff4cf6d1ddcad"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "bitfield"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46afbd2983a5d5a7bd740ccb198caf5b82f45c40c09c0eed36052d91cb92e719"
 
 [[package]]
 name = "bitflags"
@@ -655,7 +664,27 @@ checksum = "cf54492d453c6c287fd130112e58a7588ddb3f28b4dea44daf32000f99e13077"
 dependencies = [
  "serde",
  "serde_json",
- "sev",
+ "sev 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "kvm-bindings"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "efe70e65a5b092161d17f5005b66e5eefe7a94a70c332e755036fc4af78c4e79"
+dependencies = [
+ "vmm-sys-util",
+]
+
+[[package]]
+name = "kvm-ioctls"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8f8dc9c1896e5f144ec5d07169bc29f39a047686d29585a91f30489abfaeb6b"
+dependencies = [
+ "kvm-bindings",
+ "libc",
+ "vmm-sys-util",
 ]
 
 [[package]]
@@ -1070,8 +1099,8 @@ dependencies = [
  "rocket",
  "rocket_sync_db_pools",
  "serde_json",
- "sev",
- "uuid",
+ "sev 1.1.0 (git+https://github.com/tylerfanelli/sev.git?branch=pub_parse_table)",
+ "uuid 0.8.2",
 ]
 
 [[package]]
@@ -1297,18 +1326,43 @@ dependencies = [
 
 [[package]]
 name = "sev"
-version = "0.3.0"
-source = "git+https://github.com/slp/sev?branch=external-digest#b6a3f6cd310adfeffa96b20dd659fab89bc3b9f7"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8c8ec2a5131be61bba9ffad92aead45bd27805c9701d265b7196d4914299b98"
 dependencies = [
+ "bincode",
  "bitfield",
  "bitflags",
  "codicon",
  "dirs",
  "iocuddle",
+ "kvm-ioctls",
  "openssl",
  "serde",
  "serde-big-array",
  "serde_bytes",
+ "static_assertions",
+ "uuid 1.3.0",
+]
+
+[[package]]
+name = "sev"
+version = "1.1.0"
+source = "git+https://github.com/tylerfanelli/sev.git?branch=pub_parse_table#c061cc3e5f083018bfddeea3390103d175665e37"
+dependencies = [
+ "bincode",
+ "bitfield",
+ "bitflags",
+ "codicon",
+ "dirs",
+ "iocuddle",
+ "kvm-ioctls",
+ "openssl",
+ "serde",
+ "serde-big-array",
+ "serde_bytes",
+ "static_assertions",
+ "uuid 1.3.0",
 ]
 
 [[package]]
@@ -1388,6 +1442,12 @@ checksum = "dbe866e1e51e8260c9eed836a042a5e7f6726bb2b411dffeaa712e19c388f23b"
 dependencies = [
  "loom",
 ]
+
+[[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "subtle"
@@ -1664,6 +1724,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "uuid"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1674845326ee10d37ca60470760d4288a6f80f304007d92e5c53bab78c9cfd79"
+
+[[package]]
 name = "valuable"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1680,6 +1746,16 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
+name = "vmm-sys-util"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd64fe09d8e880e600c324e7d664760a17f56e9672b7495a86381b49e4f72f46"
+dependencies = [
+ "bitflags",
+ "libc",
+]
 
 [[package]]
 name = "want"
@@ -1810,3 +1886,8 @@ name = "yansi"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09041cd90cf85f7f8b2df60c646f853b7f535ce68f85244eb6731cf89fa498ec"
+
+[[patch.unused]]
+name = "sev"
+version = "0.3.0"
+source = "git+https://github.com/slp/sev?branch=external-digest#b6a3f6cd310adfeffa96b20dd659fab89bc3b9f7"
