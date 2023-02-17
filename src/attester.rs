@@ -9,6 +9,7 @@ pub enum AttesterError {
     InvalidAttestation(serde_json::Error),
     InvalidMeasurement(io::Error),
     InvalidRequest(serde_json::Error),
+    InvalidTee,
     SevChallengeJson(serde_json::Error),
     SevInvalidPolicy(serde_json::Error),
     SevMissingChain,
@@ -19,6 +20,12 @@ pub enum AttesterError {
     SevSecretTooLong,
     SevSession(io::Error),
     SevSessionMeasure(io::Error),
+    SnpNoncePubkeyHashInvalid,
+    SnpMeasurementInvalid,
+    TeePubkeyInvalid,
+    SnpCertChainInvalid,
+    SnpSignatureInvalid,
+    SnpSecretEncryption,
 }
 
 impl fmt::Display for AttesterError {

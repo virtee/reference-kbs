@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 pub mod attester;
 use attester::Attester;
 pub mod sev;
+pub mod snp;
 
 #[derive(Eq, PartialEq)]
 pub enum SessionStatus {
